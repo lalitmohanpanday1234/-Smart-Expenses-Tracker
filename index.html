@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Expenses Tracker</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>💰 Smart Expenses Tracker</h1>
+      <p class="subtitle">Track, Analyze & Optimize Your Spending</p>
+      
+      <div class="header-controls">
+        <button class="theme-toggle" onclick="toggleTheme()">
+          <span id="theme-icon">🌙</span> Theme
+        </button>
+        <button class="import-btn" onclick="triggerImport()">
+          📥 Import
+        </button>
+        <button class="export-btn" onclick="showExportModal()">
+          📤 Export
+        </button>
+        <button class="share-btn" onclick="shareReport()">
+          📤 Share
+        </button>
+      </div>
+    </header>
+
+    <div class="main-layout">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <!-- Budget Card -->
+        <div class="stats-card budget-card">
+          <h3>🎯 Monthly Budget</h3>
+          <div class="stat-item">
+            <span>Budget:</span>
+            <input type="number" id="monthly-budget" placeholder="Set budget" 
+                   style="width: 100px; padding: 5px; font-size: 14px;" 
+                   onchange="updateBudget()">
+          </div>
+          <div class="stat-item">
+            <span>Spent:</span>
+            <span id="budget-spent">₹0</span>
+          </div>
+          <div class="stat-item">
+            <span>Remaining:</span>
+            <span id="budget-remaining">₹0</span>
+          </div>
+          <div class="budget-progress">
+            <div class="progress-bar">
+              <div class="progress-fill" id="budget-progress-bar" style="width: 0%"></div>
+            </div>
+            <div id="budget-status-text" style="margin-top: 5px; font-size: 12px;"></div>
+          </div>
+        </div>
+
+        <!-- Category Management -->
+        <div class="stats-card category-management">
+          <h3>🏷️ Manage Categories</h3>
+          <div class="form-group">
+            <input type="text" id="new-category" placeholder="New category name">
+            <button class="btn btn-secondary" onclick="addCustomCategory()" style="margin-top: 10px; padding: 8px;">
+              + Add Category
+            </button>
+          </div>
+          <div class="category-list" id="custom-categories">
+            <!-- Custom categories will appear here -->
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="main-content">
+        <!-- Add Expense Form -->
+        <section class="form-section">
+          <h2>➕ Add/Edit Expense</h2>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="item">Item Name *</label>
+              <input type="text" id="item" placeholder="e.g., Groceries, Movie Ticket">
+            </div>
+
+            <div class="form-group">
+              <label for="category">Category</label>
+              <select id="category"></select>
+            </div>
+
+            <div class="form-group">
+              <label for="price">Price (₹) *</label>
+              <input type="number" id="price" placeholder="e.g., 500" min="0" step="0.01">
+            </div>
+
+            <div class="form-group">
+              <label for="date">Date (Optional)</label>
+              <input type="date" id="date" onchange="updateMonthFromDate()">
+            </div>
+
+            <div class="form-group">
+              <label for="month">Month *</label>
+              <select id="month" required>
+                <option value="january">January</option>
+                <option value="february">February</option>
+                <option value="march">March</option>
+                <option value="april">April</option>
+                <option value="may">May</option>
+                <option value="june">June</option>
+                <option value="july">July</option>
+                <option value="august">August</option>
+                <option value="september">September</option>
+                <option value="october">October</option>
+                <option value="november">November</option>
+                <option value="december">December</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="remarks">Remarks (Optional)</label>
+              <textarea id="remarks" placeholder="Any additional notes about this expense..."></textarea>
+            </div>
+          </div>
+          
+          <div class="btn-group">
+            <button class="btn" onclick="addExpense()" id="add-btn">
+              <span>💾</span> Add Expense
+            </button>
+            <button class="btn btn-secondary" onclick="clearForm()" id="clear-btn">
+              <span>🗑️</span> Clear
+            </button>
+            <button class="btn btn-warning" onclick="cancelEdit()" id="cancel-edit-btn" style="display: none;">
+              <span>✖️</span> Cancel Edit
+            </button>
+          </div>
+        </section>
+
+        <!-- Search and Filters -->
+        <div class="search-filter">
+          <div class="form-group">
+            <label for="search">🔍 Search Items</label>
+            <input type="text" id="search" placeholder="Search by item name or remarks..." oninput="updateUI()">
+          </div>
+          
+          <div class="form-group">
+            <label for="filter-month">📅 Month Filter</label>
+            <select id="filter-month" onchange="updateUI()">
+              <option value="all">All Months</option>
+              <option value="january">January</option>
+              <option value="february">February</option>
+              <option value="march">March</option>
+              <option value="april">April</option>
+              <option value="may">May</option>
+              <option value="june">June</option>
+              <option value="july">July</option>
+              <option value="august">August</option>
+              <option value="september">September</option>
+              <option value="october">October</option>
+              <option value="november">November</option>
+              <option value="december">December</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="min-price">💰 Min Price</label>
+            <input type="number" id="min-price" placeholder="Min" min="0" oninput="updateUI()">
+          </div>
+          
+          <div class="form-group">
+            <label for="max-price">💰 Max Price</label>
+            <input type="number" id="max-price" placeholder="Max" min="0" oninput="updateUI()">
+          </div>
+        </div>
+
+        <!-- Tabs for Table and Charts -->
+        <div class="section-tabs">
+          <button class="tab-btn active" onclick="showTab('table')">📋 Expenses Table</button>
+          <button class="tab-btn" onclick="showTab('charts')">📊 Analytics</button>
+          <button class="tab-btn" onclick="showTab('trends')">📈 Trends</button>
+        </div>
+
+        <!-- Table Tab -->
+        <div id="table-tab" class="tab-content">
+          <div class="table-container">
+            <div class="section-header">
+              <h2>📋 All Expenses</h2>
+              <div>
+                <span id="expense-count">0 expenses</span>
+              </div>
+            </div>
+            
+            <table id="expenses-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Month</th>
+                  <th>Category</th>
+                  <th>Item</th>
+                  <th>Price</th>
+                  <th>Remarks</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="table-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Charts Tab -->
+        <div id="charts-tab" class="tab-content" style="display: none;">
+          <div class="charts-grid">
+            <div class="chart-container">
+              <div class="chart-controls">
+                <h3>📊 Category Distribution</h3>
+                <div class="chart-type-toggle">
+                  <button class="tab-btn active" onclick="changeChartType('pie', 'chart1')">Pie</button>
+                  <button class="tab-btn" onclick="changeChartType('bar', 'chart1')">Bar</button>
+                  <button class="tab-btn" onclick="changeChartType('doughnut', 'chart1')">Doughnut</button>
+                </div>
+              </div>
+              <canvas id="expenses-chart"></canvas>
+            </div>
+            
+            <div class="chart-container">
+              <div class="chart-controls">
+                <h3>📅 Monthly Trend</h3>
+                <div class="chart-type-toggle">
+                  <button class="tab-btn active" onclick="changeChartType('line', 'chart2')">Line</button>
+                  <button class="tab-btn" onclick="changeChartType('bar', 'chart2')">Bar</button>
+                </div>
+              </div>
+              <canvas id="monthly-chart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Trends Tab -->
+        <div id="trends-tab" class="tab-content" style="display: none;">
+          <div class="chart-container" style="height: 500px;">
+            <div class="chart-controls">
+              <h3>📈 Spending Trends</h3>
+              <select id="trend-type" onchange="updateTrendChart()" style="padding: 8px; border-radius: 5px;">
+                <option value="monthly">Monthly Overview</option>
+                <option value="category-trend">Category Trends</option>
+                <option value="comparison">Year Comparison</option>
+              </select>
+            </div>
+            <canvas id="trend-chart"></canvas>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Total Summary -->
+    <div class="total-section">
+      <div class="total-item">
+        <div class="total-label">Total Expenses (All Time)</div>
+        <div class="total-amount">₹<span id="total-amount">0</span></div>
+      </div>
+      
+      <div class="total-item">
+        <div class="total-label" id="selected-month-label">Selected Month</div>
+        <div class="total-amount">₹<span id="selected-month-total">0</span></div>
+        <div id="budget-status" class="budget-status budget-good">Within Budget</div>
+      </div>
+      
+      <div class="total-item">
+        <div class="total-label">Average Daily</div>
+        <div class="total-amount">₹<span id="average-daily">0</span></div>
+        <div style="font-size: 0.9em; opacity: 0.8;" id="daily-stats"></div>
+      </div>
+      
+      <div class="total-item">
+        <div class="total-label">Average per Expense</div>
+        <div class="total-amount">₹<span id="average-expense">0</span></div>
+        <div style="font-size: 0.9em; opacity: 0.8;" id="expense-stats"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Export Modal -->
+  <div id="export-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>📤 Export Data</h3>
+        <button class="close-modal" onclick="closeExportModal()">×</button>
+      </div>
+      <p>Choose export format:</p>
+      <div class="export-options">
+        <div class="export-option" onclick="exportToCSV()">
+          <h4>📄 CSV</h4>
+          <p>Excel compatible</p>
+        </div>
+        <div class="export-option" onclick="exportToJSON()">
+          <h4>📋 JSON</h4>
+          <p>Raw data backup</p>
+        </div>
+        <div class="export-option" onclick="exportToPDF()">
+          <h4>📊 PDF Report</h4>
+          <p>Printable summary</p>
+        </div>
+        <div class="export-option" onclick="exportToText()">
+          <h4>📝 Text Summary</h4>
+          <p>Shareable format</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden file input for import -->
+  <input type="file" id="csv-import-input" accept=".csv" style="display: none;" onchange="handleCSVImport(event)">
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
